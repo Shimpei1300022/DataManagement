@@ -1,0 +1,84 @@
+static void
+shade(Vector3 hit_pos, Vector3 hit_normal,
+    Color hit_color, Color hit_spec, Scene scene, Color* color)
+{
+    // Complete
+    // ambient component
+
+    color->_red   += scene._ambient._red   * hit_color._red;
+    color->_green += scene._ambient._green * hit_color._green;
+    color->_blue  += scene._ambient._blue  * hit_color._blue;
+
+
+     // for each light in the scene
+    int l;
+    for (l = 0; l < scene._number_lights; l++) {
+        // Complete
+        // Form a shadow ray and check if the hit point is under
+        // direct illumination from the light source
+
+        Vector3 shadow_ray;
+        sub(scene._lights[l]._light_pos, hit_pos, &shadow_ray);
+        normalize(shadow_ray, &shadow_ray);
+
+        Vector3 shadow_ray_origin = hit_pos;
+        Vector3 shadow_hit_pos;
+        Vector3 shadow_hit_normal;
+        Color shadow_hit_color;
+        Color shadow_hit_spec;
+        Color shadow_hit_refract;
+        float shadow_hit_refract_index;
+        int shadow_hit;
+
+        shadow_hit = hitScene(shadow_ray_origin, shadow_ray, scene,
+            &shadow_hit_pos, &shadow_hit_normal, &shadow_hit_color,
+            &shadow_hit_spec, &shadow_hit_refract, &shadow_hit_refract_index);
+
+        if (shadow_hit) continue;
+
+
+        // Complete
+        // diffuse component
+        Vector3 L;
+        sub(scene._lights[l]._light_pos, hit_pos, &L);
+        normalize(L, &L);
+        
+        float n_dot_l;
+        computeDotProduct(hit_normal, L, &n_dot_l);
+        n_dot_l = fmaxf(n_dot_l, 0.0f);
+
+        Color diffuse;
+        diffuse._red = hit_color._red * n_dot_l;
+        diffuse._green = hit_color._green * n_dot_l;
+        diffuse._blue = hit_color._blue * n_dot_l;
+
+
+        // Complete
+        // specular component
+        mulAV(-1.0f, L, &L);
+        computeDotProduct(hit_normal, L, &n_dot_l);
+
+        Vector3 R;
+        mulAV(2.0f * n_dot_l, hit_normal, &R);
+        sub(L, R, &R);
+        normalize(R, &R);
+
+        Vector3 V;
+        sub(scene._camera, hit_pos, &V);
+        normalize(V, &V);
+
+        float r_dot_v;
+        computeDotProduct(R, V, &r_dot_v);
+        r_dot_v = fmaxf(r_dot_v, 0.0f);
+        r_dot_v = powf(r_dot_v, 64.0f);
+
+        Color specular;
+        specular._red = hit_spec._red * r_dot_v;
+        specular._green = hit_spec._green * r_dot_v;
+        specular._blue = hit_spec._blue * r_dot_v;
+
+        color->_red += scene._lights[l]._light_color._red * (diffuse._red + specular._red);
+        color->_green += scene._lights[l]._light_color._green * (diffuse._green + specular._green);
+        color->_blue += scene._lights[l]._light_color._blue * (diffuse._blue + specular._blue);
+    }
+}
