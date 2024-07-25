@@ -1,4 +1,3 @@
-
 void computeBoundaryEdges(TriangleMesh *mesh)
 {
     // Complete
